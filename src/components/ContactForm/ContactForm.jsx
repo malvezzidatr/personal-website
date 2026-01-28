@@ -32,7 +32,7 @@ function ContactForm({ onClose }) {
     setStatus('loading')
 
     try {
-      const response = await fetch('http://localhost:3000/mail/send', {
+      const response = await fetch('https://portfolio-backend-gwfl.onrender.com/mail/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
