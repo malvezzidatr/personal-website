@@ -1,15 +1,5 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { LanguageProvider, useLanguage } from './i18n/LanguageContext'
-import {
-  ZevNavbar,
-  ZevHero,
-  ZevAbout,
-  ZevProjectCard,
-  ZevProjectDetail,
-  ZevCallToAction,
-  ZevFooter,
-  ZevThemeToggle,
-} from '@zev/react'
 import ContactForm from './components/ContactForm/ContactForm'
 import './projects.css'
 
@@ -27,6 +17,14 @@ function AppContent() {
   const { lang, t, toggleLang } = useLanguage()
   const [selectedProject, setSelectedProject] = useState(null)
   const [showContactForm, setShowContactForm] = useState(false)
+
+  const navbarRef = useRef(null)
+  const heroRef = useRef(null)
+  const aboutRef = useRef(null)
+  const projectCardsRef = useRef([])
+  const projectDetailRef = useRef(null)
+  const ctaRef = useRef(null)
+  const footerRef = useRef(null)
 
   const navLinks = [
     { label: t.nav.about, href: '#about' },
@@ -50,14 +48,6 @@ function AppContent() {
     { label: t.footer.education, value: t.footer.educationValue.replace('\n', ' ') },
   ]
 
-  const handleProjectClick = (e) => {
-    const { number } = e.detail
-    const project = t.projects.items.find(
-      (p) => String(p.id).padStart(2, '0') === number
-    )
-    if (project) setSelectedProject(project)
-  }
-
   const projectData = selectedProject
     ? {
         number: String(selectedProject.id).padStart(2, '0'),
@@ -69,43 +59,139 @@ function AppContent() {
       }
     : null
 
+  // Navbar setup
+  useEffect(() => {
+    const el = navbarRef.current
+    if (!el) return
+
+    el.links = navLinks
+    el.logo = 'CM'
+    el.lang = lang
+    el.langLabel = lang === 'pt' ? 'EN' : 'PT'
+
+    const handleLangToggle = () => toggleLang()
+    const handleNavClick = (e) => {
+      const href = e.detail.link.href
+      const target = document.querySelector(href)
+      if (target) target.scrollIntoView({ behavior: 'smooth' })
+    }
+
+    el.addEventListener('lang-toggle', handleLangToggle)
+    el.addEventListener('nav-click', handleNavClick)
+
+    return () => {
+      el.removeEventListener('lang-toggle', handleLangToggle)
+      el.removeEventListener('nav-click', handleNavClick)
+    }
+  }, [lang, t, toggleLang])
+
+  // Hero setup
+  useEffect(() => {
+    const el = heroRef.current
+    if (!el) return
+
+    el.tag = '[01]'
+    el.label = t.hero.tag
+    el.year = '2025'
+    el.name = 'CAIO MALVEZZI'
+    el.ctaText = t.hero.cta
+    el.ctaHref = '#projects'
+
+    const handleCtaClick = (e) => {
+      const target = document.querySelector(e.detail.href)
+      if (target) target.scrollIntoView({ behavior: 'smooth' })
+    }
+
+    el.addEventListener('cta-click', handleCtaClick)
+    return () => el.removeEventListener('cta-click', handleCtaClick)
+  }, [t])
+
+  // About setup
+  useEffect(() => {
+    const el = aboutRef.current
+    if (!el) return
+
+    el.tag = '[02]'
+    el.title = t.about.tag
+    el.bio = `${t.about.bio1}\n\n${t.about.bio2}`
+    el.skills = skills
+    el.timeline = timeline
+  }, [t, timeline])
+
+  // Project cards setup
+  useEffect(() => {
+    projectCardsRef.current.forEach((el, index) => {
+      if (!el) return
+      const project = t.projects.items[index]
+      if (!project) return
+
+      el.number = String(project.id).padStart(2, '0')
+      el.role = project.role
+      el.title = project.title
+      el.description = project.description
+      el.techTags = project.tech
+
+      const handleCardClick = (e) => {
+        const { number } = e.detail
+        const proj = t.projects.items.find(
+          (p) => String(p.id).padStart(2, '0') === number
+        )
+        if (proj) setSelectedProject(proj)
+      }
+
+      el.addEventListener('card-click', handleCardClick)
+    })
+  }, [t])
+
+  // Project detail setup
+  useEffect(() => {
+    const el = projectDetailRef.current
+    if (!el) return
+
+    el.open = !!selectedProject
+    el.project = projectData
+
+    const handleClose = () => setSelectedProject(null)
+    el.addEventListener('close', handleClose)
+    return () => el.removeEventListener('close', handleClose)
+  }, [selectedProject, projectData])
+
+  // CTA setup
+  useEffect(() => {
+    const el = ctaRef.current
+    if (!el) return
+
+    el.tag = '[04]'
+    el.label = t.cta.tag
+    el.heading = t.cta.heading
+    el.description = t.cta.text
+    el.buttonText = t.cta.button
+
+    const handleCtaClick = () => setShowContactForm(true)
+    el.addEventListener('cta-click', handleCtaClick)
+    return () => el.removeEventListener('cta-click', handleCtaClick)
+  }, [t])
+
+  // Footer setup
+  useEffect(() => {
+    const el = footerRef.current
+    if (!el) return
+
+    el.heading = t.footer.heading
+    el.links = footerLinks
+    el.info = footerInfo
+    el.decorativeName = 'CAIO MALVEZZI'
+    el.copyright = `© ${new Date().getFullYear()} Caio Malvezzi. ${t.footer.copyright}`
+  }, [t, footerLinks, footerInfo])
+
   const titleParts = t.projects.title.split('\n')
 
   return (
     <>
-      <ZevNavbar
-        logo="CM"
-        links={navLinks}
-        lang={lang}
-        langLabel={lang === 'pt' ? 'EN' : 'PT'}
-        onLangToggle={toggleLang}
-        onNavClick={(e) => {
-          const href = e.detail.link.href
-          const el = document.querySelector(href)
-          if (el) el.scrollIntoView({ behavior: 'smooth' })
-        }}
-      />
+      <zev-navbar ref={navbarRef}></zev-navbar>
       <main>
-        <ZevHero
-          tag="[01]"
-          label={t.hero.tag}
-          year="2025"
-          name="CAIO MALVEZZI"
-          ctaText={t.hero.cta}
-          ctaHref="#projects"
-          onCtaClick={(e) => {
-            const el = document.querySelector(e.detail.href)
-            if (el) el.scrollIntoView({ behavior: 'smooth' })
-          }}
-        />
-        <ZevAbout
-          id="about"
-          tag="[02]"
-          title={t.about.tag}
-          bio={`${t.about.bio1}\n\n${t.about.bio2}`}
-          skills={skills}
-          timeline={timeline}
-        />
+        <zev-hero ref={heroRef}></zev-hero>
+        <zev-about ref={aboutRef} id="about"></zev-about>
         <section className="projects" id="projects">
           <div className="projects__container">
             <div className="projects__header">
@@ -116,43 +202,20 @@ function AppContent() {
               {titleParts[0]}<br />{titleParts[1]}
             </h2>
             <div className="projects__grid">
-              {t.projects.items.map((project) => (
-                <ZevProjectCard
+              {t.projects.items.map((project, index) => (
+                <zev-project-card
                   key={project.id}
-                  number={String(project.id).padStart(2, '0')}
-                  role={project.role}
-                  title={project.title}
-                  description={project.description}
-                  techTags={project.tech}
-                  onCardClick={handleProjectClick}
-                />
+                  ref={(el) => (projectCardsRef.current[index] = el)}
+                ></zev-project-card>
               ))}
             </div>
           </div>
         </section>
-        <ZevProjectDetail
-          open={!!selectedProject}
-          project={projectData}
-          onClose={() => setSelectedProject(null)}
-        />
-        <ZevCallToAction
-          tag="[04]"
-          label={t.cta.tag}
-          heading={t.cta.heading}
-          description={t.cta.text}
-          buttonText={t.cta.button}
-          onCtaClick={() => setShowContactForm(true)}
-        />
+        <zev-project-detail ref={projectDetailRef}></zev-project-detail>
+        <zev-call-to-action ref={ctaRef}></zev-call-to-action>
       </main>
-      <ZevFooter
-        id="contact"
-        heading={t.footer.heading}
-        links={footerLinks}
-        info={footerInfo}
-        decorativeName="CAIO MALVEZZI"
-        copyright={`© ${new Date().getFullYear()} Caio Malvezzi. ${t.footer.copyright}`}
-      />
-      <ZevThemeToggle className="theme-toggle-fixed" />
+      <zev-footer ref={footerRef} id="contact"></zev-footer>
+      <zev-theme-toggle class="theme-toggle-fixed"></zev-theme-toggle>
       {showContactForm && <ContactForm onClose={() => setShowContactForm(false)} />}
     </>
   )

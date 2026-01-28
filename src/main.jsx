@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import '@zev/tokens/css'
+import '@malvezzidatr/zev-tokens/css'
+import '@malvezzidatr/zev-core'
 import App from './App.jsx'
 import './index.css'
 
